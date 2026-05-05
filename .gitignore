@@ -1,0 +1,39 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.ipynb_checkpoints/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Models / outputs that are easily reproduced (keep small summary CSVs in git)
+outputs/models/*.pkl
+outputs/models/*.joblib
+outputs/figures/*.png
+outputs/figures/*.svg
+# Keep tables in git so memo/slides have a paper trail
+!outputs/tables/
+
+# Large interim data — re-derivable from raw + notebooks
+data/interim/
+data/processed/
+
+# Keep the raw csv (it's the project ground truth) — small enough
+!data/raw/
+
+# Secrets / local config
+.env
+*.env

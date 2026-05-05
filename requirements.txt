@@ -1,0 +1,31 @@
+# Core scientific stack
+numpy==1.26.4
+pandas==2.2.2
+scipy==1.13.1
+
+# Modelling
+scikit-learn==1.5.0
+lightgbm==4.3.0
+xgboost==2.0.3
+optuna==3.6.1            # hyperparameter tuning
+imbalanced-learn==0.12.3 # class-weight + SMOTE alternatives if needed
+
+# Explainability
+shap==0.45.1
+
+# Visualization
+matplotlib==3.8.4
+seaborn==0.13.2
+plotly==5.22.0
+
+# Notebook environment
+jupyter==1.0.0
+ipykernel==6.29.4
+notebook==7.2.0
+
+# Association rules (optional Tier 3 method)
+mlxtend==0.23.1
+
+# Quality of life
+tqdm==4.66.4
+joblib==1.4.2
