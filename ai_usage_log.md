@@ -44,4 +44,16 @@ Format per entry:
   Quantic step-by-step guidance in the project description; confirmed each step
   has a corresponding notebook.
 
+### 2026-05-05 - Jasper Claude Code
+- **Task:** fill in `notebooks/02_data_readiness.ipynb` so it runs
+- **Prompt summary** Asked Claude to complete a reproducible data-readiness notebook for the UCI Bank Marketing dataset, using the existing `src/data.py` helper pipeline, and keeping strict constraints around stratified splits, validation checks, and end-to-end notebook execution in mind.
+- **What the AI contributed:** Filled in notebooks/02_data_readiness.ipynb with: detailed profiling (shape, memory, dtypes, null counts, target counts+proportions),
+  assertion-guarded cleaning verification, stratification checks, save+existence checks, and a final summary cell. The notebook was then executed via jupyter
+  nbconvert --execute --inplace so all outputs are present.
+- **What I learned / how I verified:** Confirmed the test set has a positive rate between 11.1% and 11.5% as well as the testing set. Testing set differed by only 0.0007 pp indicating a strong coverage and accurate data model. Ensured test data was not seen in the training data set.   
+  - data/interim/train.parquet — 32,950 rows, positive rate 11.27% (within 0.111–0.115 ✓)                                                                       
+  - data/interim/test.parquet — 8,238 rows, positive rate 11.26% (within 0.111–0.115 ✓)                                                                         
+  - Train/test rate gap — 0.0007 pp (threshold: 0.1 pp ✓)                                                                                                       
+  - Notebook executed end-to-end without errors, all cell outputs populated ✓
+
 <!-- Add new entries above this line. Most recent on top, or chronological — your call, just be consistent. -->
