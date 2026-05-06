@@ -56,4 +56,10 @@ Format per entry:
   - Train/test rate gap — 0.0007 pp (threshold: 0.1 pp ✓)                                                                                                       
   - Notebook executed end-to-end without errors, all cell outputs populated ✓
 
+### 2026-05-06 — Jasper — Claude Code
+- **Task:** Fill in `notebooks/03_eda.ipynb` with slide-ready EDA on the train set.
+- **Prompt summary:** Asked Claude to complete the EDA notebook using `src/viz.py` helpers, producing univariate distributions, bivariate lift charts, a macro trends view, and 3–5 headline insights — all from the train set only, with figures saved to `outputs/figures/`.
+- **What the AI contributed:** Generated all chart code (histograms, bar plots, decile conversion rates, macro timeline), saved ≥8 PNGs with the `03_eda_` prefix, and drafted a final markdown cell with bulleted insights each referencing a specific saved figure. Never opened the test parquet.
+- **What I learned / how I verified:** Counted 12 figures in `outputs/figures/` with the `03_eda_` prefix ✓. Checked that `test.parquet` was not referenced anywhere in notebook cell code ✓. Read the headline insights and confirmed each cited a real figure filename ✓. The poutcome and euribor3m charts aligned with what the data dictionary predicted — prior campaign success and low interest rates are the clearest positive signals.
+
 <!-- Add new entries above this line. Most recent on top, or chronological — your call, just be consistent. -->
