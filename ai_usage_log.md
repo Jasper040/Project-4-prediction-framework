@@ -151,4 +151,51 @@ Format per entry:
   | `proba_test` shape | (8238,) | (8238,) | ✓ |
   | `05_calibration.png` exists | True | True | ✓ |
 
+### 2026-05-06 — Jasper — Claude Code
+- **Task:** Fill in `notebooks/06_segmentation.ipynb` — k-means customer segmentation layered on top of the LightGBM model.
+- **Prompt summary:** Asked Claude to complete the segmentation notebook: fit the same preprocessor as the model, run a k=2–10 search (inertia + silhouette), pick and justify a k, profile segments, and score the LightGBM model within each segment.
+- **What the AI contributed:**
+  - Built the full notebook from the scaffold: preprocessor fit/transform with `get_feature_names_out()` cached, k-search loop saving `kmeans_k_search.csv`, 1×2 diagnostic figure saved as `06_kmeans_diagnostic.png`, K=4 refit, segment profiling (n, conversion rate, avg age, dominant job/contact, mean euribor3m) saved as `segment_profiles.csv`, and per-segment model scoring (PR-AUC with NaN guard for single-class segments) saved as `segment_model_perf.csv`.
+  - Wrote the §6.4 k-choice justification and §6.7 persona narratives with actual numbers from the run.
+- **What I learned / how I verified:**
+
+  ```powershell
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/segment_profiles.csv'); print(df.to_string())"
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/kmeans_k_search.csv'); print(df.to_string())"
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/segment_model_perf.csv'); print(df.to_string())"
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/segment_profiles.csv'); rates=df['conversion_rate'].values; print('spread:', round(rates.max()-rates.min(),3))"
+  Test-Path outputs/figures/06_kmeans_diagnostic.png
+  ```
+
+  Results:
+
+  ```
+  segment      n  conversion_rate  avg_age  dominant_job  dominant_contact  mean_euribor3m
+        3   1243         0.629123    41.76        admin.          cellular        0.976316
+        1   9608         0.191715    39.36        admin.          cellular        1.200348
+        0  11510         0.059427    40.19        admin.          cellular        4.751523
+        2  10589         0.038153    40.22   blue-collar         telephone        4.890886
+
+  k=2..10 rows in kmeans_k_search.csv ✓
+  segment_model_perf.csv: seg 3 PR-AUC 0.794, seg 1 PR-AUC 0.463, seg 0 PR-AUC 0.070, seg 2 PR-AUC 0.108
+  spread: 0.591
+  True
+  ```
+
+  Outcome checklist:
+
+  | Check | Expected | Actual | Pass? |
+  |---|---|---|---|
+  | `kmeans_k_search.csv` rows | 9 (k=2..10) | 9 | ✓ |
+  | `06_kmeans_diagnostic.png` exists | True | True | ✓ |
+  | `segment_profiles.csv` rows | 4 (K=4) | 4 | ✓ |
+  | Profiles sorted by conversion rate desc | seg 3 first (63%) | ✓ | ✓ |
+  | `segment_model_perf.csv` rows | 4 | 4 | ✓ |
+  | No crash on single-class segment | NaN returned | all segments had both classes | ✓ |
+  | Notebook runs clean from fresh kernel | No errors | ✓ | ✓ |
+
+  **K-means k=4 choice:** The silhouette score peaks at k=2 (0.285), not k=4 (0.142), so pure cluster-quality metrics favour a coarser split. k=4 was chosen on business grounds: k=2 collapses the "warm returner" cohort (63% conversion) into the broader cellular group (19%), erasing the highest-value targeting signal. The inertia elbow inflects at k=3–4, and k=4 produces four segments each above minimum actionable campaign size (~1 200 customers in train), mapping to four campaign tiers. k=3 would merge the two low-conversion segments (cellular vs. telephone cold), eliminating a channel-routing decision that matters operationally.
+
+  **Column rename — `conv_rate` → `conversion_rate`:** The initial profile aggregation used the alias `conv_rate`. The validation script raised a `KeyError: 'conversion_rate'`. Fixed by renaming the aggregation key in the notebook and re-executing so the CSV was regenerated with the correct column name.
+
 <!-- Add new entries above this line. Most recent on top, or chronological — your call, just be consistent. -->
