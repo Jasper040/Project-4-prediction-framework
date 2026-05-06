@@ -1,21 +1,22 @@
-# Claude Code Prompts — One per Coding Notebook
+# Claude Code Prompts — Coding + Writing Tracks
 
 Copy-paste each prompt into Claude Code from the `novabank_retention/` folder.
 Each prompt is self-contained — Claude Code starts cold each time, so the
 context is repeated.
 
-**Workflow per notebook:**
+**Workflow per artefact:**
 1. Pull the latest from git so you don't overwrite your partner's work.
 2. Activate the venv: `source .venv/bin/activate` (or Windows equivalent).
 3. Paste the prompt below into Claude Code.
 4. Review the diff before accepting.
-5. Run the notebook top-to-bottom from a clean kernel.
+5. Run the notebook top-to-bottom from a clean kernel (coding tracks only).
 6. Verify the testable outcomes.
-7. Commit notebook + any output files (figures, tables, models).
+7. Commit the artefact + any output files.
 8. Add a one-paragraph entry to `ai_usage_log.md`.
 
-Notebook 01 (problem framing) is pure writing — handle that one in the
-notebook directly without Claude Code.
+The coding-track prompts (notebooks 02–09) come first. The writing-track
+prompts (notebook 01, executive memo, slide appendix) are at the end —
+run those after the coding work is finished and stable.
 
 ---
 
@@ -577,4 +578,287 @@ Your job:
 
 This is the rubric line "reproducible notebook" — if a grader pulls
 the repo and can't get the same numbers, the score caps at 4.
+```
+
+---
+
+# Writing Track
+
+Run these AFTER notebooks 02–09 are complete and the `outputs/` folder
+is stable. Memo and slides are synthesis — they should not introduce
+new analysis. If you find yourself wanting to compute something new
+mid-memo, go fix the relevant notebook first.
+
+---
+
+## Prompt — Notebook 01: Problem Framing (writing-only)
+
+```
+Project context: NovaBank Predictive Retention project (Quantic MSBA).
+The reframe — "Predictive Retention via Targeted Engagement Campaigns"
+— is documented in `README.md`. Notebook 01 is the framing notebook;
+it sets up the narrative every other notebook builds on. It contains
+ONLY markdown cells. No code.
+
+Files to read for context before writing:
+- `README.md` — the canonical project framing.
+- `Analytics Methods and Frameworks Project Overview.pdf` (in the
+  parent folder) — the Quantic project description and rubric.
+- `notebooks/01_problem_framing.ipynb` — the stub with section
+  headers already in place.
+
+Your job: fill in the markdown cells of
+`notebooks/01_problem_framing.ipynb` with executive-ready content.
+The reader is a NovaBank exec, not a TA.
+
+Required behaviour:
+1. Section 1.1 — Five-sentence problem brief covering, in order:
+   context, decision to be made, who cares, timeframe, constraints.
+   It must be EXACTLY five sentences. No more, no fewer.
+2. Section 1.2 — Business → analytics translation. State the
+   business question, the analytics translation (binary
+   classification of campaign response as a retention signal), and
+   why we are NOT predicting churn directly (no churn label in the
+   data). 4–6 sentences.
+3. Section 1.3 — Success measures. Pick exactly two KPIs:
+   - Primary: PR-AUC. Justify with the ~11% positive rate making
+     ROC-AUC misleading.
+   - Secondary: Expected value at top-K decile. Justify as the
+     translation of probabilities to euros for executive comparison.
+   2–3 sentences per KPI.
+4. Section 1.4 — Draft action / policy. State the initial policy
+   ("each cycle, contact the top 20% of customers by predicted
+   subscription probability"), note that 20% is a starting budget
+   that notebook 08 will sensitivity-test against 5%, 10%, and 30%.
+5. Section 1.5 — What this framing buys us. Three bullets max:
+   real labels (no synthetic churn), clean FP/FN trade-off,
+   defensible explanation surface.
+
+Testable outcomes:
+- All five markdown sections in the stub are filled with substantive
+  content (no "TODO" placeholders, no skeleton text).
+- Section 1.1 is exactly five sentences.
+- Section 1.3 names PR-AUC as primary and EV at top-K decile as
+  secondary, with explicit justification of each.
+- The notebook has zero code cells (it's pure writing).
+- Total markdown word count between 500 and 900 words.
+- Notebook opens cleanly in Jupyter; no parse errors.
+
+Constraints:
+- Do not add code cells.
+- Do not invent statistics about the dataset — use only what is in
+  `README.md` or the data documentation.
+- Use the word "retention" (or "engagement"), not "churn", to keep
+  framing consistent with the project README.
+- No bullet points longer than 2 lines.
+- Update `ai_usage_log.md` with a brief entry when done.
+```
+
+---
+
+## Prompt — Executive Memo (1 page)
+
+```
+Project context: NovaBank Predictive Retention project (Quantic MSBA).
+All 9 notebooks are complete. The artefacts in `outputs/tables/` and
+`outputs/figures/` are the source of truth for every number you cite.
+You are now writing the 1-page executive memo that anchors the final
+PDF submission.
+
+Files to read for context:
+- `README.md` — project framing.
+- `outputs/tables/baseline_vs_improved.csv` — headline model metrics.
+- `outputs/tables/decile_lift.csv` — top-decile lift figures.
+- `outputs/tables/sensitivity_cost_value.csv`,
+  `sensitivity_budget.csv`, `sensitivity_recession.csv` — risk inputs.
+- The output of `decision.build_decision_rule(...).describe()` from
+  the bottom of `notebooks/07_decision_framework.ipynb` — contact
+  volume and EV in euros.
+
+Your job: create `executive_memo.md` at the project root. The memo is
+written for NovaBank's Chief Operating Officer + Chief Customer
+Officer — they're smart, time-poor, non-technical.
+
+Required structure (in this order, with these exact heading names):
+1. **Title + one-line elevator pitch** — single sentence at the top,
+   bold, that captures the recommendation.
+2. **Decision** — 2–3 sentences. Lead with the recommendation, not
+   the reasoning. ("We recommend deploying a calibrated LightGBM
+   targeting model to select the top 20% of customers per campaign
+   cycle, projecting €X expected value with €Y avoided waste.")
+3. **Rationale** — 3–4 sentences. Cite specific numbers:
+   - PR-AUC of LightGBM vs. logistic baseline.
+   - Decile-1 lift vs. base rate.
+   - Why the budget-constrained rule beats unconstrained EV-max in
+     practice.
+4. **Impact** — 2–3 sentences in € terms. Use the
+   `DecisionRule.describe()` numbers from notebook 07: contact
+   volume, expected value, expected successful conversions, FP rate.
+5. **Risks** — exactly 3 bullets, drawn from notebook 08:
+   - Sensitivity to cost/value assumptions.
+   - Sensitivity to base-rate (recession scenario).
+   - Fairness disparities flagged in notebook 09 with proposed
+     monitoring.
+6. **Pilot plan** — one paragraph (~60 words). 90-day pilot, treatment
+   vs. control within the top decile, primary KPI = uplift over
+   control, decision criteria for full rollout (>20% uplift = scale,
+   10–20% = iterate, <10% = kill).
+
+Testable outcomes:
+- `executive_memo.md` exists at the project root.
+- Word count is between 400 and 550 (1 printed page).
+- All six sections present with their exact heading names.
+- At least three specific numbers cited, each traceable to a file in
+  `outputs/tables/`. Cite the source file inline in a comment in the
+  markdown source, e.g. `<!-- source: outputs/tables/baseline_vs_improved.csv -->`.
+- No paragraph longer than 4 sentences.
+- The word "churn" does not appear; the framing is retention.
+- Markdown renders cleanly to PDF via pandoc (no broken tables,
+  no missing references).
+
+Constraints:
+- No new analysis. Numbers come from the notebooks; if a number
+  isn't in `outputs/`, do not cite it.
+- Decision-first writing. Recommendation is in the first paragraph,
+  not the last.
+- € symbol for monetary figures, percentage points (pp) for rate
+  changes, percentages (%) for proportions.
+- No bullet points outside the Risks section.
+- Do not include figures in the memo itself — figures go in the
+  slide appendix. The memo is text-only.
+- Update `ai_usage_log.md` with an entry covering this work.
+```
+
+---
+
+## Prompt — Slide Appendix (8–10 slides)
+
+```
+Project context: NovaBank Predictive Retention project (Quantic MSBA).
+All 9 notebooks are complete. The executive memo is written. You're
+now building the slide appendix that the assignment requires (8–10
+slides covering methods, evidence, scenarios, business implications,
+and AI usage).
+
+Files to read for context:
+- `executive_memo.md` — the memo, for narrative consistency.
+- `README.md` — project framing.
+- `outputs/figures/` — every chart you can use is here.
+- `outputs/tables/` — every number you can cite is here.
+- `ai_usage_log.md` — source for the final slide.
+
+Your job: create `slides.pptx` at the project root, using
+`python-pptx`. Total slide count must be 8 to 10 inclusive.
+
+Required slide order (each slide should reference at least one
+artefact from `outputs/`):
+
+1. **Title** — project name, the reframe in one sentence, team
+   names. No artefact required.
+2. **Problem & KPIs** — five-sentence brief boiled to 3 bullets,
+   plus the two KPIs (PR-AUC + EV at top-K) with justification.
+3. **Data & EDA** — top 2–3 EDA insights with figures from
+   `outputs/figures/03_eda_*.png`. Use `poutcome` lift and
+   `euribor3m`/macro view at minimum.
+4. **Modelling approach** — baseline vs. improved + the leakage
+   story. Embed `outputs/figures/04_baseline_curves.png`. One bullet
+   on the leaky-vs-deployable gap, one on the LightGBM lift.
+5. **Model performance** — table from
+   `outputs/tables/baseline_vs_improved.csv` (rendered as a slide
+   table) + `outputs/figures/05_calibration.png` next to it.
+6. **Customer segmentation** — table from
+   `outputs/tables/segment_profiles.csv` + 1-line personas
+   from notebook 06. (Skip this slide if you need to cut to 8.)
+7. **Decision rule** — `outputs/figures/07_decision_framework.png`
+   + the headline numbers (threshold, contacts, EV, successful, wasted).
+8. **Sensitivity analysis** — `outputs/figures/08_sensitivity_heatmap.png`
+   + `08_sensitivity_budget.png`. 3 bullets: what holds, what shifts,
+   risk to flag.
+9. **Explainability & fairness** —
+   `outputs/figures/09_shap_summary.png` (or `09_shap_bar.png`) +
+   one fairness table summary. Closing bullet: surrogate-tree
+   fallback policy.
+10. **AI usage & limitations** — distilled from `ai_usage_log.md`
+    (3 bullets: how AI was used, what was verified, key learning) +
+    2 limitations of the analysis. Last slide.
+
+Method:
+- Use `python-pptx`. Build a small helper that creates each slide
+  with: title, optional image (from `outputs/figures/`), optional
+  table (from a `outputs/tables/` CSV rendered into a python-pptx
+  table), 3–5 bullet talking points, and a footer in 9pt grey text
+  that names the source notebook (e.g. "Source: notebooks/07_decision_framework.ipynb").
+- Use a single consistent template: same title font, same body
+  font, same accent colour throughout. Pick a NovaBank-style
+  palette (a deep blue + a single accent — keep it simple).
+- 16:9 aspect ratio.
+- Title slide: large title, subtitle, team names. No body bullets.
+- Last slide MUST be AI usage + limitations.
+
+Testable outcomes:
+- `slides.pptx` exists at the project root.
+- Slide count between 8 and 10 inclusive.
+- Every non-title slide has a footer naming the source notebook.
+- Every image embedded comes from a file under `outputs/figures/`.
+- Every numeric claim on a slide can be traced to a file under
+  `outputs/tables/` (verify by spot-checking 3 random numbers).
+- The first slide is the title; the last is AI usage + limitations.
+- Slide deck opens cleanly in Microsoft PowerPoint and Google
+  Slides without missing-image errors.
+- No slide has more than 6 bullet points.
+- No bullet point is longer than 2 lines.
+
+Constraints:
+- No images sourced outside `outputs/figures/`.
+- No numbers invented — every number traces back to a CSV.
+- Do not include the word "churn"; framing is retention.
+- Do not include speaker notes longer than 60 words per slide.
+- Do not exceed 10 slides (rubric explicitly says ≤10).
+- Do not drop below 8 slides (rubric requires ≥8).
+- Update `ai_usage_log.md` with an entry covering this work.
+```
+
+---
+
+## Prompt — Final PDF Assembly
+
+```
+Project context: All deliverables are written: `executive_memo.md`,
+`slides.pptx`, and the 9 notebooks. Quantic requires submission as
+a single PDF containing the memo, with links to the slide deck and
+the reproducible notebook (GitHub or Drive).
+
+Your job: produce `NovaBank_Submission.pdf` at the project root.
+
+Required behaviour:
+1. Convert `executive_memo.md` to PDF via pandoc:
+   `pandoc executive_memo.md -o executive_memo.pdf
+    --pdf-engine=xelatex -V geometry:margin=1in
+    -V mainfont="Helvetica" -V fontsize=11pt`
+   (or equivalent if pandoc/xelatex is not available — fall back
+   to a python-based markdown→PDF such as `markdown-pdf`).
+2. Verify the output is exactly 1 printed page. If it overruns,
+   tighten paragraphs in `executive_memo.md` (do not change
+   numbers) and re-render.
+3. Append a final page to the memo PDF containing:
+   - **Slide deck:** [URL placeholder — to be filled with the Drive
+     or GitHub link to slides.pptx]
+   - **Reproducible notebook:** [URL placeholder — repo or Drive
+     folder containing the full novabank_retention/ project]
+   Save as `NovaBank_Submission.pdf`.
+
+Testable outcomes:
+- `NovaBank_Submission.pdf` exists at the project root.
+- Page 1 is the executive memo (1 page).
+- Page 2 contains the two link placeholders, clearly labelled.
+- Total page count is exactly 2.
+- File opens in Adobe Acrobat and Preview without errors.
+
+Constraints:
+- Do not embed the full slide deck or notebook in the PDF —
+  Quantic asks for links only.
+- Do not include any analysis or visualisations in the PDF beyond
+  what's in the memo.
+- Replace the placeholder URLs with real ones BEFORE submission;
+  leaving placeholders in is a 0 on the rubric.
 ```

@@ -16,7 +16,10 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from . import config
 
 
-def build_preprocessor(scale_numeric: bool = True) -> ColumnTransformer:
+def build_preprocessor(
+    scale_numeric: bool = True,
+    extra_numeric_cols: list[str] | None = None,
+) -> ColumnTransformer:
     """Build a ColumnTransformer that handles numeric + categorical features.
 
     Numeric pipeline:
@@ -30,6 +33,9 @@ def build_preprocessor(scale_numeric: bool = True) -> ColumnTransformer:
 
     Set scale_numeric=False for tree-based models (LightGBM/XGBoost), which
     don't need scaling and run faster without it.
+
+    Pass extra_numeric_cols=['duration'] to include leaky features through the
+    same impute+scale pipeline as the standard numeric columns.
     """
     numeric_steps = [("imputer", SimpleImputer(strategy="median"))]
     if scale_numeric:
@@ -50,7 +56,7 @@ def build_preprocessor(scale_numeric: bool = True) -> ColumnTransformer:
         ]
     )
 
-    numeric_cols = config.NUMERIC_COLS + ["was_previously_contacted"]
+    numeric_cols = config.NUMERIC_COLS + ["was_previously_contacted"] + (extra_numeric_cols or [])
 
     preprocessor = ColumnTransformer(
         transformers=[

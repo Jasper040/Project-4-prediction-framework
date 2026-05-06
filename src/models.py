@@ -43,11 +43,14 @@ class ModelResult:
 # ---------------------------------------------------------------------------
 # Logistic regression baseline
 # ---------------------------------------------------------------------------
-def make_logreg_pipeline() -> Pipeline:
-    """Logistic regression with full preprocessing — our baseline model."""
+def make_logreg_pipeline(extra_numeric_cols: list[str] | None = None) -> Pipeline:
+    """Logistic regression with full preprocessing — our baseline model.
+
+    Pass extra_numeric_cols=['duration'] for the leaky benchmark only.
+    """
     return Pipeline(
         steps=[
-            ("preprocessor", build_preprocessor(scale_numeric=True)),
+            ("preprocessor", build_preprocessor(scale_numeric=True, extra_numeric_cols=extra_numeric_cols)),
             ("classifier", LogisticRegression(**config.LOGREG_DEFAULTS)),
         ]
     )
