@@ -110,4 +110,45 @@ Format per entry:
   | Keys in joblib | `['model', 'proba_test']` | `['model', 'proba_test']` | ✓ |
   | `duration` in comparison CSV | No match (silence) | Row labels contain "duration" as expected; no leaky model artefact persisted to `outputs/models/` | ✓ |
 
+### 2026-05-06 — Jasper — Claude Code
+- **Task:** Fill in `notebooks/05_improved_model.ipynb` — LightGBM with Optuna tuning and isotonic calibration.
+- **Prompt summary:** Asked Claude to complete the improved-model notebook: Optuna hyperparameter search (50 trials, 5-fold stratified CV PR-AUC), refit best pipeline, isotonic calibration on the train set, side-by-side comparison against the logistic baseline, calibration reliability diagram, and persist the calibrated artefact.
+- **What the AI contributed:**
+  - Completed all code cells (already scaffolded as stubs) including the Optuna objective, calibration refit, comparison table generation, calibration plot, and joblib persistence.
+  - Wrote the §5.7 plain-language interpretation cell based on actual run results.
+- **What I learned / how I verified:** Ran the validation commands below and caught two issues in the process:
+  - `cross_val_score(n_jobs=-1)` caused a silent hang inside the Jupyter kernel on Windows (Proactor event loop incompatibility with ZMQ); fixed by switching to `n_jobs=1`.
+  - The validation script expected column `brier_score` but `classification_summary` outputs key `brier`; fixed by adding `.rename(columns={'brier': 'brier_score'})` before saving the CSV.
+
+  ```powershell
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/baseline_vs_improved.csv', index_col=0); print(df[['roc_auc','pr_auc','brier_score']].to_string())"
+  python -c "import joblib; m=joblib.load('outputs/models/improved_lgbm.joblib'); print(list(m.keys())); print(m['best_params'])"
+  python -c "import joblib; m=joblib.load('outputs/models/improved_lgbm.joblib'); print(m['proba_test'].shape); print(round(m['proba_test'].min(),3), round(m['proba_test'].max(),3))"
+  Test-Path outputs/figures/05_calibration.png
+  ```
+
+  Results:
+
+  ```
+                          roc_auc    pr_auc  brier_score
+  Logistic baseline      0.800945  0.460116     0.161569
+  LightGBM (calibrated)  0.816889  0.494776     0.074172
+  ['model', 'proba_test', 'best_params']
+  {'learning_rate': 0.0108, 'num_leaves': 26, 'min_child_samples': 66, 'reg_alpha': 0.103, 'reg_lambda': 0.021, 'scale_pos_weight': 7.88}
+  (8238,)
+  0.0 0.945
+  True
+  ```
+
+  Outcome checklist:
+
+  | Check | Expected | Actual | Pass? |
+  |---|---|---|---|
+  | LightGBM PR-AUC ≥ baseline | ≥ 0.4601 | 0.4948 | ✓ |
+  | LightGBM ROC-AUC ≥ baseline | ≥ 0.8009 | 0.8169 | ✓ |
+  | Brier score improved | < 0.1616 | 0.0742 (54% better) | ✓ |
+  | `improved_lgbm.joblib` keys | model, proba_test, best_params | ✓ | ✓ |
+  | `proba_test` shape | (8238,) | (8238,) | ✓ |
+  | `05_calibration.png` exists | True | True | ✓ |
+
 <!-- Add new entries above this line. Most recent on top, or chronological — your call, just be consistent. -->
