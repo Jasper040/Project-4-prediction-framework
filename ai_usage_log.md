@@ -255,4 +255,64 @@ Format per entry:
   | Max EV across curve | Positive | €74,795 | ✓ | At some threshold the policy generates net positive value under the assumed cost structure (€5/call, €120/conversion). A negative maximum would mean the model's precision is too low for the economics to work at any threshold — the campaign would destroy value regardless of how we set the cutoff. €74,795 confirms the model clears the profitability bar with comfortable headroom. |
   | `07_decision_framework.png` exists | True | True | ✓ | The 1×2 figure (EV curve with threshold marker + decile lift bars) is the primary visual deliverable for the memo and slide deck. Absence would mean `viz.save_fig()` silently failed, leaving the outputs folder incomplete for graders. |
 
+### 2026-05-07 — Jasper — Claude Code
+- **Task:** Fill in `notebooks/08_sensitivity_analysis.ipynb` — stress-test the three business assumptions behind the NB07 decision rule (cost-per-contact, value-per-conversion, contact budget) plus a recession scenario.
+- **Prompt summary:** Asked Claude to complete the sensitivity-analysis notebook: run a 4×4 cost/value sweep and save a heatmap, sweep five contact-budget fractions and produce a 1×2 EV/precision plot, simulate a recession by downsampling positives to 50% and compare baseline vs. recession EV in a table, and write a 5-bullet "what holds vs. what shifts" conclusion.
+- **What the AI contributed:**
+  - Added the four missing code cells to the existing scaffold: (1) `decision.sensitivity_sweep` call + CSV save + seaborn heatmap, (2) budget sweep loop + CSV save, (3) budget sweep 1×2 matplotlib figure, (4) recession comparison DataFrame + CSV save.
+  - Filled in the `## 8.5 — What holds vs. what shifts` markdown cell with the required 5 bullets (2 robust, 2 sensitive, 1 actionable risk).
+  - Executed the notebook end-to-end via `jupyter nbconvert --execute --inplace`; fixed a `sns` name-not-defined error (seaborn not in scope in new cells) and a notebook JSON validity error (markdown cell type-switched to code was missing required `outputs`/`execution_count` fields) before the run succeeded.
+- **What I learned / how I verified:** Ran the following checks after execution:
+
+  ```powershell
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/sensitivity_cost_value.csv'); print(df.shape); print(df.head())"
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/sensitivity_budget.csv'); print(df.to_string())"
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/sensitivity_recession.csv'); print(df.to_string())"
+  python -c "import pandas as pd; df=pd.read_csv('outputs/tables/sensitivity_cost_value.csv'); neg=df[df['expected_value_eur']<0]; print('Negative EV scenarios:', len(neg))"
+  Test-Path outputs/figures/08_sensitivity_heatmap.png
+  Test-Path outputs/figures/08_sensitivity_budget.png
+  ```
+
+  Results:
+
+  ```
+  (16, 8)
+     cost_per_contact  value_per_conversion  threshold  expected_value_eur  contacts  successful  wasted  missed
+  0               2.5                    60   0.094222             33200.0      1648         622    1026     306
+  1               2.5                   120   0.094222             70520.0      1648         622    1026     306
+  2               2.5                   200   0.094222            120280.0      1648         622    1026     306
+  3               2.5                   300   0.094222            182480.0      1648         622    1026     306
+  4               5.0                    60   0.094222             29080.0      1648         622    1026     306
+
+     budget_fraction  threshold  expected_value_eur  contacts  successful  wasted  missed
+  0             0.05   0.458296             30450.0       414         271     143     657
+  1             0.10   0.336506             48800.0       824         441     383     487
+  2             0.20   0.094222             66400.0      1648         622    1026     306
+  3             0.30   0.071924             69790.0      2482         685    1797     243
+  4             0.50   0.055488             73430.0      4130         784    3346     144
+
+      scenario  n_positives  base_rate  threshold  expected_value_eur  contacts  successful  wasted  missed  precision
+  0   baseline          928   0.112649   0.094222             66400.0      1648         622    1026     306   0.377427
+  1  recession          464   0.059686   0.081505             30855.0      1557         322    1235     142   0.206808
+
+  Negative EV scenarios: 0
+  True
+  True
+  ```
+
+  Outcome checklist:
+
+  | Check | Expected | Actual | Pass? | Reasoning & what it tells us |
+  |---|---|---|---|---|
+  | `sensitivity_cost_value.csv` shape | (16, 8) | (16, 8) | ✓ | 4 cost values × 4 conversion values = 16 rows. A different shape would mean the sweep grid was passed incorrectly or a row was dropped on save, leaving the heatmap with missing cells. |
+  | Threshold constant across cost/value sweep | 0.094222 for all 16 rows | 0.094222 | ✓ | The top-20% threshold is set by `np.quantile(y_proba, 0.80)` — it depends only on the score distribution and budget fraction, not on cost or value. A threshold that changes with cost/value would indicate the unconstrained EV-max solver was called instead of the budget-constrained one. |
+  | No negative EV scenarios in cost/value grid | 0 | 0 | ✓ | Even at the worst-case combination (€20/contact, €60/conversion), the policy returns positive EV: 622 successful × €40 net = €24,880 minus 1,026 wasted × €20 = €20,520, netting €4,360. Zero negative cells validates that the recommendation direction holds across the entire plausible business-assumption range — no cost/value combination in the grid makes the campaign unprofitable. |
+  | `sensitivity_budget.csv` rows | 5 | 5 | ✓ | One row per fraction in [0.05, 0.10, 0.20, 0.30, 0.50]. A missing row would mean a `build_decision_rule` call failed for one fraction (e.g., a quantile edge case at 5% budget on a small test set), leaving the budget sensitivity curve with a gap. |
+  | EV increases with budget fraction | Monotone increasing | 30,450 → 48,800 → 66,400 → 69,790 → 73,430 | ✓ | Expanding the contact budget captures more true positives. Monotone growth confirms the model never sends so many wasted contacts that additional budget destroys net value. The flattening (large jump 5%→20%, small jump 20%→50%) also justifies 20% as the operational sweet spot. |
+  | Precision drops as budget expands | Monotone decreasing | 65.5% → 53.5% → 37.7% → 27.6% → 19.0% | ✓ | Widening the contact net includes lower-probability customers, so precision must fall. A non-monotone column would signal a bug in how the threshold is being set as the budget fraction changes, making the precision-at-budget figure misleading. |
+  | Recession EV lower than baseline | recession < baseline | €30,855 < €66,400 | ✓ | Halving the positive base rate (11.3% → 6.0%) means the same contact list yields roughly half as many conversions, so EV should approximately halve. A recession EV equal to or above baseline would mean the downsampling was not applied to the correct scored subset. |
+  | Recession rule still positive EV | > 0 | €30,855 | ✓ | Even with base rate halved, the top-K policy remains profitable. A negative recession EV would mean the recommendation reverses under a plausible macro scenario — the campaign would only make sense in good economic conditions — which would be the most damaging possible sensitivity finding. |
+  | `08_sensitivity_heatmap.png` exists | True | True | ✓ | The heatmap is the primary visual for the cost/value scenario analysis. Its absence would mean the seaborn pivot + save step failed and the figure deliverable is missing from the outputs folder for graders. |
+  | `08_sensitivity_budget.png` exists | True | True | ✓ | The 1×2 EV/precision figure makes the budget-fraction trade-off readable for a non-technical audience. Absence would mean the matplotlib cell errored — which did happen during development when cell ordering placed the plot cell before the `budget_sweep` DataFrame was defined, and was fixed by correcting the cell sequence. |
+
 <!-- Add new entries above this line. Most recent on top, or chronological — your call, just be consistent. -->
