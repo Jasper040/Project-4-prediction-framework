@@ -1,0 +1,27 @@
+# Depth-3 surrogate tree mimicking the calibrated LightGBM.
+# Fidelity R^2 vs LightGBM scores: 0.8772
+# Decision regions (leaves): 8
+# Leaf value = predicted probability of subscribing.
+
+|--- num__nr.employed <= 5087.65
+|   |--- num__was_previously_contacted <= 0.50
+|   |   |--- cat__contact_cellular <= 0.50
+|   |   |   |--- value: [0.24]
+|   |   |--- cat__contact_cellular >  0.50
+|   |   |   |--- value: [0.39]
+|   |--- num__was_previously_contacted >  0.50
+|   |   |--- num__emp.var.rate <= -2.35
+|   |   |   |--- value: [0.63]
+|   |   |--- num__emp.var.rate >  -2.35
+|   |   |   |--- value: [0.77]
+|--- num__nr.employed >  5087.65
+|   |--- num__cons.conf.idx <= -46.65
+|   |   |--- num__euribor3m <= 1.53
+|   |   |   |--- value: [0.17]
+|   |   |--- num__euribor3m >  1.53
+|   |   |   |--- value: [0.44]
+|   |--- num__cons.conf.idx >  -46.65
+|   |   |--- num__was_previously_contacted <= 0.50
+|   |   |   |--- value: [0.05]
+|   |   |--- num__was_previously_contacted >  0.50
+|   |   |   |--- value: [0.27]

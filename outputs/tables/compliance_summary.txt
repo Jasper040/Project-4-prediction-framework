@@ -1,0 +1,14 @@
+# Compliance brief — notebook 09
+
+## Top 3 features driving recommendations (mean |SHAP|)
+- num__nr.employed: 0.3732
+- num__euribor3m: 0.1923
+- cat__contact_cellular: 0.1632
+
+## Widest disparities under the top-20% contact policy
+- age_band: 60_plus contacted +85.08% more than 30_44; underlying base-rate gap +36.03%.
+- education: illiterate contacted +38.68% more than basic.9y; underlying base-rate gap +41.47%.
+
+## Fallback policy
+- 8-leaf depth-3 surrogate tree (R²=0.877).
+- Rules: outputs/tables/surrogate_rules.txt
