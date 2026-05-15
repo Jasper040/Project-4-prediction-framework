@@ -19,6 +19,16 @@ Format per entry:
 
 ## Entries
 
+### 2026-05-14 — Jasper — Claude Code
+- **Task:** Build `slides.pptx` — the 8–10 slide appendix required by the rubric.
+- **Prompt summary:** Asked Claude to generate the appendix deck using `python-pptx`, with the required slide order (Title → Problem & KPIs → EDA → Modelling approach → Performance → Segmentation → Decision rule → Sensitivity → Explainability/fairness → AI usage + limitations), a consistent NovaBank-style template (deep navy + gold accent, 16:9), embedded figures from `outputs/figures/` and a small table rendered from `outputs/tables/baseline_vs_improved.csv` and `outputs/tables/segment_profiles.csv`, plus footers naming the source notebook on every non-title slide.
+- **What the AI contributed:**
+  - Authored `build_slides.py`: palette, layout helpers (title bar with accent rule, footer, bullet renderer enforcing ≤6 bullets per text box, image-fit helper that preserves aspect ratio, and a styled `add_df_table` that renders DataFrames into native python-pptx tables).
+  - Generated all 10 slides per the prompt's required order, with every numeric claim sourced from a CSV under `outputs/tables/` (no invented numbers), every embedded image from `outputs/figures/`, and speaker notes kept ≤60 words per slide.
+  - Authored `validate_slides.py`: parses the generated pptx and asserts the testable outcomes (slide count 8–10, no occurrence of the word "churn", footer on every non-title slide, ≤6 bullets per text box, no bullet >240 characters, speaker notes ≤60 words, first slide is the title, last slide is AI usage + limitations, and 3 spot-checked numbers — LightGBM PR-AUC 0.495, warm_returners n=1,243/conv=62.9%, top-20% EV €66,400 — match the source CSVs).
+  - Installed `python-pptx==0.6.23` into the project venv (was missing from `requirements.txt`).
+- **What I learned / how I verified:** Ran `python validate_slides.py` after the build; all checks passed (slide count 10, 8 embedded images across the 7 visual slides, 3/3 numeric spot-checks matching CSVs, no "churn", every non-title slide carries a `Source: notebooks/...` footer). Opened `slides.pptx` to confirm the deck renders without missing-image errors. Outstanding follow-up: `python-pptx==0.6.23` should be appended to `requirements.txt` so the deck is reproducible from a clean venv (not yet done — staged for the reproducibility-check pass).
+
 ### 2026-05-04 — Jasper — Claude (Cowork mode)
 - **Task:** Project framing + build plan.
 - **Prompt summary:** Asked Claude to pick apart the project description, explain
